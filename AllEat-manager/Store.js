@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View, Text } from 'react-native';
 import { TextInput, Button } from 'react-native-paper';
-import accountData from './data/data.json';
+import stores from './stores.js';
 
 export default function StoreScreen({ navigation }) {
     const [account, setAccount] = useState({name: '', password: ''})
@@ -16,10 +16,10 @@ export default function StoreScreen({ navigation }) {
     };
 
     const login = (account) => {
-        for (const id in accountData){
-            const user = accountData[id]
-            if (user.name === account.name) {
-                if (user.password === account.password) {
+        for (const id in stores){
+            const store = stores[id]
+            if (store.name === account.name) {
+                if (store.password === account.password) {
                     return id
                 }
                 else {
