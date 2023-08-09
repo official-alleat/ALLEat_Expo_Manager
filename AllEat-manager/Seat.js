@@ -10,7 +10,9 @@ export default function SeatScreen({ route, navigation }) {
     var store = stores[storeId];
     const [tableNum, setTableNum] = useState(0);
     const [adminModalvisible, setAdminModalvisible] = useState(false);
+    const [fillSeatModalVisible, setFillSeatModalVisible] = useState(false);
     const [seatsStatus, setSeatsStatus] = useState({"1": "available", "3": "available"});
+    const [isMoving, setIsMoving] = useState(false);
 
     const emptySeat = (tableNum) => {
         console.log('empty table of ' + tableNum)
@@ -18,9 +20,21 @@ export default function SeatScreen({ route, navigation }) {
         setAdminModalvisible(false)
     }
 
-    const moveSeat = (tableNum) => {
-        console.log('move seat to ' + tableNum)
-        setAdminModalvisible(false)
+    const prepareMoveSeat = (tableNum) => {
+      setIsMoving(true)
+      setAdminModalvisible(false)
+    }
+
+    const moveSeat = (newTableNum) => {
+      delete seatsStatus[newTableNum]
+      setSeatsStatus({...seatsStatus, [tableNum]: "available"})
+      setIsMoving(false)
+    }
+
+    const fillSeat = (tableNum) => {
+      delete seatsStatus[tableNum]
+      setSeatsStatus(seatsStatus)
+      setFillSeatModalVisible(false)
     }
 
     const getSeat = (storeId) => {
@@ -35,12 +49,12 @@ export default function SeatScreen({ route, navigation }) {
                   seat ? 
                   seatsStatus[seat] ?
                   <Pressable key={row * 100 + col} style={styles.availableSeat} onPress={() =>
-                    {setModalVisible(!modalVisible), setTableNum(seat)}}>
+                    {if (isMoving) {moveSeat(seat)} else {setTableNum(seat), setFillSeatModalVisible(true)}}}>
                     <Text style={styles.seatName}>좌석{seat}</Text>
                   </Pressable>
                   :
                   <Pressable key={row * 100 + col} style={styles.reservedSeat} onPress={() =>
-                    {setTableNum(seat), setAdminModalvisible(true)}}>
+                    {if (isMoving) {} else {setTableNum(seat), setAdminModalvisible(true)}}}>
                     <Text style={styles.seatName}>좌석{seat}</Text>
                   </Pressable>
                   :
@@ -70,13 +84,26 @@ export default function SeatScreen({ route, navigation }) {
                 <Button title="예약하기" onPress={() => ws.send(JSON.stringify({'storeId': storeId, 'tableNum': tableNum, 'command': 'reserve'}))}/>
                 <Button title="취소하기" onPress={() => ws.send(JSON.stringify({'storeId': storeId, 'tableNum': tableNum, 'command': 'cancel'}))}/>
             </View>
+            {isMoving && <>
+              <Text>옮길 자리를 선택하세요</Text>
+              <Button title="자리 옮기기 취소" onPress={() => setIsMoving(false)}/>
+            </>}
           </View>
           <Modal visible={adminModalvisible} onDismiss={() => setAdminModalvisible(false)}>
             <Card>
                 <Card.Content>
                     <Text>{tableNum}번 테이블</Text>
                     <Button title="자리 비우기" onPress={() => emptySeat(tableNum)}/>
-                    <Button title="자리 옮기기" onPress={() => moveSeat(tableNum)}/>
+                    <Button title="자리 옮기기" onPress={() => prepareMoveSeat(tableNum)}/>
+                </Card.Content> 
+            </Card>
+          </Modal>
+          <Modal visible={fillSeatModalVisible} onDismiss={() => setFillSeatModalVisible(false)}>
+            <Card>
+                <Card.Content>
+                    <Text>{tableNum}번 테이블을 채우시겠습니까?</Text>
+                    <Button title="예" onPress={() => fillSeat(tableNum)}/>
+                    <Button title="아니오" onPress={() => setFillSeatModalVisible(false)}/>
                 </Card.Content> 
             </Card>
           </Modal>
